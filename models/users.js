@@ -6,30 +6,68 @@ const crypto = require("crypto");
 
 const users = new mongoose.Schema({
     googleId: {
-      type: String,
-      unique: true, // This ensures the field must have a value
-      sparse:true
+        type: String,
+        unique: true, // This ensures the field must have a value
+        sparse: true
     },
     email: {
         type: String,
-        sparse:true,
+        sparse: true,
         unique: true,
         validate: [validator.isEmail, "Please enter valid email address"],
     },
     fullName: {
-      type: String,
-      
+        type: String,
+
     },
     phone: {
         type: String,
-        sparse:true,
-        unique:true,
+        sparse: true,
+        unique: true,
         maxLength: [200, "Your phone number cannot exceed 200 characters"],
     },
     address: {
+        pincode: {
+            type: String,
+            required: true,
+            trim: true,
+            maxLength: 6
+        },
+        city: {
+            type: String,
+            required: true,
+            trim: true,
+            maxLength: 100 
+        },
+        state: {
+            type: String,
+            required: true,
+            trim: true,
+            maxLength: 100
+        },
+        streetAddress: {
+            type: String,
+            required: true,
+            trim: true,
+            maxLength: 200 
+        },
+        area: {
+            type: String,
+            required: true,
+            trim: true,
+            maxLength: 150 
+        },
+        landmark: {
+            type: String,
+            trim: true,
+            maxLength: 150, 
+            default: ''
+        },
+        saveAddressAs: {
         type: String,
-        required: [false, "Please enter your address"],
-        maxLength: [200, "Your address cannot exceed 200 characters"],
+        enum: ['home', 'office', 'other'],
+        default: 'home'
+    }
     },
     avatar: {
         public_id: {
@@ -61,9 +99,9 @@ const users = new mongoose.Schema({
             default: 0,
         },
     },
-    gender:{
-        type:String
+    gender: {
+        type: String
     }
 });
 
-module.exports = mongoose.model('users',users)
+module.exports = mongoose.model('users', users)

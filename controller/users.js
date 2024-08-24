@@ -428,12 +428,88 @@ router.post('/getallusers', auth, async (req, res) => {
 //     }
 // });
 
-router.post('/add-address',async(req,res)=>{
-    try{
-          
-    }catch(error){
+router.post('/add-address', async (req, res) => {
+    
+    const { userId,pincode, city, state, streetAddress, area, landmark,saveAddressAs } = req.body;
 
+    try {
+        let User = await users.findById(userId);
+        if (!User) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update the address sub-document
+        User.address = {
+            pincode,
+            city,
+            state,
+            streetAddress,
+            area,
+            landmark,
+            saveAddressAs
+        };
+
+        await User.save();
+        res.status(201).json({ message: 'Address added successfully', address: User.address });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
-})
+});
+
+
+router.post('/update-address', async (req, res) => {
+    
+    const {userId, pincode, city, state, streetAddress, area, landmark } = req.body;
+
+    try {
+        let user = await users.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update fields only if they are provided in the request body
+        if (pincode) user.address.pincode = pincode;
+        if (city) user.address.city = city;
+        if (state) user.address.state = state;
+        if (streetAddress) user.address.streetAddress = streetAddress;
+        if (area) user.address.area = area;
+        if (landmark) user.address.landmark = landmark;
+
+        await user.save();
+        res.json({ message: 'Address updated successfully', address: user.address });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+
+router.post('/delete-address', async (req, res) => {
+    const { userId } = req.body;
+
+    try {
+        let user = await users.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Clear the address sub-document
+        user.address = {
+            pincode: '',
+            city: '',
+            state: '',
+            streetAddress: '',
+            area: '',
+            landmark: ''
+        };
+
+        await user.save();
+        res.json({ message: 'Address removed successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
 
 module.exports = router;  
