@@ -1,5 +1,5 @@
-'/node_modules/'
-'/config/'
+node_modules/
+config/
 .env
 '.env' 
 '.env' 

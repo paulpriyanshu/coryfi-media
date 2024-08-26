@@ -94,8 +94,10 @@ router.post('/login-with-phone', async (req, res) => {
 
         }
 
-
-        return res.redirect(`/phone-number?userId=${user._id}&token=${token}`);
+        const createuser = new users({ phone })
+        await createuser.save()
+        // console.log(createuser.id)
+        return res.redirect(`/phone-number?userId=${createuser.id}`);
 
         // user = new users({
         //     phone, email, fullName
@@ -126,8 +128,6 @@ router.post('/login-with-phone', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
-    } finally {
-        client.disconnect();
     }
 });
 
@@ -135,14 +135,14 @@ router.post('/verify-otp', async (req, res) => {
     const { userId, otp } = req.body;
     console.log(req.body)
     try {
-        
+
         const user = await user.findById(userId);
 
         if (!user) {
             return { success: false, message: 'User not found' };
         }
 
-        const oneMinute = 60 * 1000; 
+        const oneMinute = 60 * 1000;
         const otpCreationTime = user.otp.createdAt;
         if (!otpCreationTime || new Date() - otpCreationTime > oneMinute) {
             return { success: false, message: 'OTP has expired' };
@@ -158,10 +158,10 @@ router.post('/verify-otp', async (req, res) => {
             return { success: false, message: 'Invalid OTP' };
         }
 
-        user.otp = {}; 
+        user.otp = {};
         await user.save();
         const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        
+
         res.header('Authorization', token).json({ message: 'Logged in', token });
     } catch (error) {
         console.error(error);
@@ -177,17 +177,81 @@ router.get('/google/callback',
     passport.authenticate('google', { session: false }),
     (req, res) => {
         //  JWT was passed in req.user.token
+
         const { user, token } = req.user;
+        // console.log(user,token)
         if (!user.phone) {
-            return res.redirect(`/phone-number?userId=${user._id}&token=${token}`);
+            return res.redirect(`/phone-number?userId=${user._id}`);
         }
 
         res.json({ token });
     }
 );
 
+// router.post('/phone-number', async (req, res) => {
+//     const userId = req.query.userId
+//     console.log(userId)
+//     const { phone, email, fullName ,gender} = req.body;
+
+//     try {
+//         let user = await users.findById(userId);
+//         if (!user) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
+
+//         if (phone) {
+//             user.phone = phone;
+//         }
+
+//         if (email) {
+//             user.email = email;
+//         }
+
+//         if (fullName) {
+//             user.fullName = fullName;
+//         }
+//         if(gender){
+//             user.gender = gender;
+//         }
+
+//         await user.save();
+
+//         const mailid = user.email
+//         const otp = crypto.randomBytes(3).toString('hex');
+//         console.log(otp);
+//         user.otp.code = otpCode.toString();
+//         user.otp.createdAt = new Date();
+//         user.otp.attempts = 0;
+
+//         const transporter = nodemailer.createTransport({
+//             service: 'Gmail',
+//             auth: {
+//                 user: process.env.EMAIL_USERNAME,
+//                 pass: process.env.EMAIL_PASSWORD,
+//             },
+//         });
+
+//         const mailOptions = {
+//             from: process.env.EMAIL_USERNAME,
+//             to: mailid,
+//             subject: 'Your OTP Code',
+//             text: `Your OTP code is: ${otp}`,
+//         };
+
+//         transporter.sendMail(mailOptions);
+
+//         return res.json({ message: 'OTP sent. Please verify your OTP.', userId: user._id });
+
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
+
 router.post('/phone-number', async (req, res) => {
-    const { userId, phone, email, fullName ,gender} = req.body;
+    const userId = req.query.userId;
+    console.log(userId);
+    const { phone, email, fullName, gender } = req.body;
 
     try {
         let user = await users.findById(userId);
@@ -195,54 +259,67 @@ router.post('/phone-number', async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        if (phone) {
+        if (user.phone && !user.email) {
+            if (email) {
+                user.email = email;
+            }
+
+            if (fullName) {
+                user.fullName = fullName;
+            }
+            if (gender) {
+                user.gender = gender;
+            }
+
+            const otp = crypto.randomBytes(3).toString('hex');
+            console.log(otp);
+            user.otp = {
+                code: otp,
+                createdAt: new Date(),
+                attempts: 0
+            };
+
+            await user.save();
+
+            const transporter = nodemailer.createTransport({
+                service: 'Gmail',
+                auth: {
+                    user: process.env.EMAIL_USERNAME,
+                    pass: process.env.EMAIL_PASSWORD,
+                },
+            });
+
+            const mailOptions = {
+                from: process.env.EMAIL_USERNAME,
+                to: user.email,
+                subject: 'Your OTP Code',
+                text: `Your OTP code is: ${otp}`,
+            };
+
+            transporter.sendMail(mailOptions);
+
+            return res.json({ message: 'OTP sent. Please verify your OTP.', userId: user._id });
+        } else if (user.email) {
+
             user.phone = phone;
+            user.gender = gender
+
+            await user.save();
+
+
+            const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+            res.header('Authorization', token).json({ message: 'Logged in', token });
+        } else {
+            return res.status(400).json({ message: 'Invalid request. Phone number is required for phone login, and both phone and email are required for Google login.' });
         }
-
-        if (email) {
-            user.email = email;
-        }
-
-        if (fullName) {
-            user.fullName = fullName;
-        }
-        if(gender){
-            user.gender = gender;
-        }
-
-        await user.save();
-
-        const mailid = user.email
-        const otp = crypto.randomBytes(3).toString('hex');
-        console.log(otp);
-        user.otp.code = otpCode.toString();
-        user.otp.createdAt = new Date();
-        user.otp.attempts = 0;
-
-        const transporter = nodemailer.createTransport({
-            service: 'Gmail',
-            auth: {
-                user: process.env.EMAIL_USERNAME,
-                pass: process.env.EMAIL_PASSWORD,
-            },
-        });
-
-        const mailOptions = {
-            from: process.env.EMAIL_USERNAME,
-            to: mailid,
-            subject: 'Your OTP Code',
-            text: `Your OTP code is: ${otp}`,
-        };
-
-        transporter.sendMail(mailOptions);
-
-        return res.json({ message: 'OTP sent. Please verify your OTP.', userId: user._id });
 
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 
 
 // router.post('/forgotPassword', async (req, res) => {
@@ -307,7 +384,7 @@ router.post('/phone-number', async (req, res) => {
 
 
 router.post('/update-Profile', auth, async (req, res) => {
-    const { username, email ,phone,gender} = req.body;
+    const { username, email, phone, gender } = req.body;
     try {
         const user = await users.findById(req.user.id);
 
@@ -331,7 +408,7 @@ router.post('/update-Profile', auth, async (req, res) => {
 });
 
 // Delete user account
-router.post('/deleteAccount', auth, async (req, res) => {
+router.post('/delete-Account', auth, async (req, res) => {
     try {
         const user = await users.findByIdAndDelete(req.user.id);
 
@@ -391,7 +468,7 @@ router.post('/profile', auth, async (req, res) => {
 //   });
 
 
-router.post('/getallusers', auth, async (req, res) => {
+router.post('/getallusers', async (req, res) => {
     try {
         const allUsers = await users.find()
         res.status(200).json(allUsers);
@@ -404,7 +481,7 @@ router.post('/getallusers', auth, async (req, res) => {
 
 // router.post('/logout', auth, async (req, res) => {
 //     try {
-        
+
 //         const token = req.header('Authorization');
 
 //         if (!token) {
@@ -428,9 +505,9 @@ router.post('/getallusers', auth, async (req, res) => {
 //     }
 // });
 
-router.post('/add-address', async (req, res) => {
-    
-    const { userId,pincode, city, state, streetAddress, area, landmark,saveAddressAs } = req.body;
+router.post('/add-address', auth, async (req, res) => {
+    const userId = req.user.id
+    const { pincode, city, state, streetAddress, area, landmark, saveAddressAs } = req.body;
 
     try {
         let User = await users.findById(userId);
@@ -458,9 +535,9 @@ router.post('/add-address', async (req, res) => {
 });
 
 
-router.post('/update-address', async (req, res) => {
-    
-    const {userId, pincode, city, state, streetAddress, area, landmark } = req.body;
+router.post('/update-address', auth, async (req, res) => {
+    const userId = req.user.id
+    const { pincode, city, state, streetAddress, area, landmark } = req.body;
 
     try {
         let user = await users.findById(userId);
@@ -485,8 +562,8 @@ router.post('/update-address', async (req, res) => {
 });
 
 
-router.post('/delete-address', async (req, res) => {
-    const { userId } = req.body;
+router.post('/delete-address', auth, async (req, res) => {
+    const userId = req.user.id
 
     try {
         let user = await users.findById(userId);
@@ -512,4 +589,5 @@ router.post('/delete-address', async (req, res) => {
     }
 });
 
+router.post('/delete')
 module.exports = router;  

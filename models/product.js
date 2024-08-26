@@ -83,6 +83,7 @@ const productSchema = new mongoose.Schema({
         ref: "User",
         required: true,
     },
+
     createdAt: {
         type: Date,
         default: Date.now,
@@ -94,6 +95,7 @@ const productSchema = new mongoose.Schema({
 const brandSchema = new mongoose.Schema({
     name: { type: String, required: true },
     isActive: { type: Boolean, default: true },
+    commingSoon:{type:Boolean,default: false},
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
@@ -102,6 +104,7 @@ const brandSchema = new mongoose.Schema({
 const categorySchema = new mongoose.Schema({
     name: { type: String, required: true },
     isActive: { type: Boolean, default: true },
+    commingSoon:{type:Boolean,default: false},
     subCategories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory' }],
     createdAt: { type: Date, default: Date.now }
 });
@@ -110,6 +113,7 @@ const categorySchema = new mongoose.Schema({
 const subCategorySchema = new mongoose.Schema({
     name: { type: String, required: true },
     isActive: { type: Boolean, default: true },
+    commingSoon:{type:Boolean,default: false},
     subSubCategories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubSubCategory' }],
     createdAt: { type: Date, default: Date.now }
 });
@@ -125,6 +129,7 @@ const productVariantSchema = new mongoose.Schema({
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     variantType:{type:String,required:true},
     variantName: { type: Array, required: true },
+    commingSoon:{type:Boolean,default: false},
     variantPrice: { type: Number, required: true },
     isActive: { type: Boolean, default: true },
     createdAt: { type: Date, default: Date.now },
@@ -133,7 +138,7 @@ const productVariantSchema = new mongoose.Schema({
 
 const Brand = mongoose.model('Brand', brandSchema);
 const Category = mongoose.model("Category", categorySchema);
-const SubCategory = mongoose.model('SubCategory', subCategorySchema);
+const SubCategory = mongoose.model("SubCategory", subCategorySchema);
 const SubSubCategory = mongoose.model('SubSubCategory', subSubCategorySchema);
 const Product = mongoose.model("Product", productSchema);
 const ProductVariant = mongoose.model("ProductVariant", productVariantSchema);

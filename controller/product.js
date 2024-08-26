@@ -182,7 +182,7 @@ router.post('/createsubcategory/:subcatid/createsubsubcategory', async (req, res
     }
 });
 //craete product variant
-router.post('/craeteproductvariant',async(req,res)=>{
+router.post('/craete-product-variant',async(req,res)=>{
     try{
         const {productId, variantType, variantName, variantPrice} = req.body
     if (!productId || !variantType || !variantName || !variantPrice) {
@@ -223,7 +223,6 @@ router.post('/getproducts-by-variant', async (req, res) => {
             return res.status(400).json({ message: 'variantType and variantName are required' });
         }
 
-        // Find variants matching the criteria
         const variants = await ProductVariant.find({variantType,
             variantName,}).populate('productId');
 
@@ -231,7 +230,6 @@ router.post('/getproducts-by-variant', async (req, res) => {
             return res.status(404).json({ message: 'No products found for this variant' });
         }
 
-        // Extract the products from the variants
         const products = variants.map(variant => variant.productId);
 
         return res.status(200).json({ products });
@@ -240,7 +238,6 @@ router.post('/getproducts-by-variant', async (req, res) => {
         return res.status(500).json({ message: 'Server error' });
     }
 });
-
 
 // Create product
 router.post('/createproduct', async (req, res) => {
@@ -337,7 +334,7 @@ router.post('/createproduct', async (req, res) => {
     }
 });
 
-//getallproduct
+//get allproduct
 router.post('/getproducts',async(req,res)=>{
     try{
       const data = await Product.find().populate({path:'category',populate:{path:'subCategories',populate:{path:'subSubCategories'}}}).populate('brand')
@@ -395,7 +392,6 @@ router.post('/products/search', async (req, res) => {
         const { query } = req.query;
         let brandId, categoryId, subCategoryId, subSubCategoryId;
 
-        // Search for the brand by name and get its ObjectId
         if (query) {
             const brand = await Brand.findOne({ name: { $regex: query, $options: 'i' } });
             if (brand) {
@@ -545,7 +541,7 @@ router.post('/updateproduct/:id', async (req, res) => {
 
 
 //delete product
-router.delete('/deleteproduct/:id', async (req, res) => {
+router.post('/deleteproduct/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -562,6 +558,80 @@ router.delete('/deleteproduct/:id', async (req, res) => {
     }
 });
 
+
+//sort by price
+router.post('/products-sort-by-price', async (req, res) => {
+    try {
+        const sortOrder = req.query.sort === 'desc' ? -1 : 1; 
+
+        const products = await Product.find()
+            .sort({ price: sortOrder }) 
+            .populate('category')
+            .populate('subCategory')
+            .populate('subSubCategory')
+            .populate('brand')
+            .populate('variants')
+            .populate('user');
+
+        res.status(200).json({
+            success: true,
+            count: products.length,
+            products,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error',
+        });
+    }
+});
+
+router.get('/products/new-arrivals', async (req, res) => {
+    try {
+        const newArrivals = await Product.find({ isNewArrival: true })
+            .populate('category')
+            .populate('subCategory')
+            .populate('subSubCategory')
+            .populate('brand')
+            .populate('variants');
+
+        res.status(200).json({
+            success: true,
+            count: newArrivals.length,
+            products: newArrivals,
+        });
+    } catch (error) {
+        console.error("Error fetching new arrivals:", error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error',
+        });
+    }
+});
+
+router.get('/products/popular', async (req, res) => {
+    try {
+        const popular = await Product.find({ isTopSelling: true })
+            .populate('category')
+            .populate('subCategory')
+            .populate('subSubCategory')
+            .populate('brand')
+            .populate('variants');
+
+        res.status(200).json({
+            success: true,
+            count: popular.length,
+            products: popular,
+        });
+    } catch (error) {
+        console.error("Error fetching new arrivals:", error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error',
+        });
+    }
+});
 
 
 module.exports = router;

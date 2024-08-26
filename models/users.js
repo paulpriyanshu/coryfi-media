@@ -5,11 +5,6 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
 const users = new mongoose.Schema({
-    googleId: {
-        type: String,
-        unique: true, // This ensures the field must have a value
-        sparse: true
-    },
     email: {
         type: String,
         sparse: true,
@@ -26,34 +21,34 @@ const users = new mongoose.Schema({
         unique: true,
         maxLength: [200, "Your phone number cannot exceed 200 characters"],
     },
-    address: {
+    address:[ {
         pincode: {
             type: String,
-            required: true,
+            required: false,
             trim: true,
             maxLength: 6
         },
         city: {
             type: String,
-            required: true,
+            required: false,
             trim: true,
             maxLength: 100 
         },
         state: {
             type: String,
-            required: true,
+            required: false,
             trim: true,
             maxLength: 100
         },
         streetAddress: {
             type: String,
-            required: true,
+            required: false,
             trim: true,
             maxLength: 200 
         },
         area: {
             type: String,
-            required: true,
+            required: false,
             trim: true,
             maxLength: 150 
         },
@@ -68,7 +63,7 @@ const users = new mongoose.Schema({
         enum: ['home', 'office', 'other'],
         default: 'home'
     }
-    },
+    }],
     avatar: {
         public_id: {
             type: String,

@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken')
 const connectToRedis = require('../config/redisconnection');
 
-module.exports =async  function auth(req,res,next){
+module.exports = async  function auth(req,res,next){
        let authheader = req.headers.Authorization || req.headers.authorization
        if (authheader && authheader.startsWith("Bearer")){
         token = authheader.split(" ")[1];
@@ -12,9 +12,7 @@ module.exports =async  function auth(req,res,next){
             next();
           } catch (error) {
             res.status(400).json({ message: 'Invalid Token' });
-          }finally {
-            client.disconnect();
-        }
+          }
         
     }
 }

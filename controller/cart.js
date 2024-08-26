@@ -8,7 +8,7 @@ const auth = require('../middleware/auth')
 
 const router = express.Router()
 
-router.post('/addtocart', async (req, res) => {
+router.post('/add-to-cart', async (req, res) => {
     try {
         const { userid, productid, qty } = req.body;
 
@@ -26,7 +26,7 @@ router.post('/addtocart', async (req, res) => {
         } else {
             
             const cartItem = new cart({ userid, productid, qty });
-            await cartItem.save(); // Save the new cart item
+            await cartItem.save(); 
         }
 
         await wishlist.findOneAndDelete({ userid, productid });
@@ -37,7 +37,7 @@ router.post('/addtocart', async (req, res) => {
     }
 });
 
-router.post('/getcartitems',async(req,res)=>{
+router.post('/get-cart-items',async(req,res)=>{
     try{
          const {userid} = req.body
          if(!userid){
@@ -68,7 +68,7 @@ router.post('/getcartitems',async(req,res)=>{
     }
 })
 
-router.post('/removefromcart', async (req, res) => {
+router.post('/remove-from-cart', async (req, res) => {
     try {
         const { userid, productid } = req.body;
 
@@ -89,7 +89,7 @@ router.post('/removefromcart', async (req, res) => {
 });
 
 
-router.post('/addtowishlist', async (req, res) => {
+router.post('/add-to-wishlist', async (req, res) => {
     try {
         const { userid, productid } = req.body;
 
@@ -110,7 +110,7 @@ router.post('/addtowishlist', async (req, res) => {
     }
 });
 
-router.post('/getwishlistitems',async(req,res)=>{
+router.post('/get-wishlist-items',async(req,res)=>{
     try{
          const {userid} = req.body
          if(!userid){
@@ -131,5 +131,25 @@ router.post('/getwishlistitems',async(req,res)=>{
              res.status(500).send(error)
     }
 })
+
+router.post('/remove-from-wishlist', async (req, res) => {
+    try {
+        const { userid, productid } = req.body;
+
+        if (!userid || !productid) {
+            return res.status(400).json({ msg: "User ID and Product ID are required" });
+        }
+
+        const removedItem = await wishlist.findOneAndDelete({ userid, productid });
+
+        if (!removedItem) {
+            return res.status(404).json({ msg: "Product not found in wishlist" });
+        }
+
+        return res.status(200).json({ msg: "Product removed from wishlist" });
+    } catch (error) {
+        return res.status(500).send({ error: error.message });
+    }
+});
 
 module.exports = router
