@@ -1,5 +1,6 @@
 const express = require('express')
 const users = require('../models/users')
+// const address = require('../models/address')
 const nodemailer = require('nodemailer');
 const passport = require('passport')
 const bcrypt = require('bcryptjs');
@@ -8,7 +9,8 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const dotenv = require('dotenv');
 const connectToRedis = require('../config/redisconnection');
-const auth = require('../middleware/auth')
+const auth = require('../middleware/auth');
+const address = require('../models/address');
 
 
 dotenv.config();
@@ -255,9 +257,6 @@ router.post('/phone-number', async (req, res) => {
 
     try {
         let user = await users.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
 
         if (user.phone && !user.email) {
             if (email) {
@@ -319,7 +318,6 @@ router.post('/phone-number', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-
 
 
 // router.post('/forgotPassword', async (req, res) => {
@@ -514,9 +512,8 @@ router.post('/add-address', auth, async (req, res) => {
         if (!User) {
             return res.status(404).json({ message: 'User not found' });
         }
-
-        // Update the address sub-document
-        User.address = {
+        const addresses = await address.create({
+            userId,
             pincode,
             city,
             state,
@@ -524,64 +521,101 @@ router.post('/add-address', auth, async (req, res) => {
             area,
             landmark,
             saveAddressAs
-        };
-
-        await User.save();
-        res.status(201).json({ message: 'Address added successfully', address: User.address });
+        })
+        User.address.push(addresses.id)
+        User.save()
+        
+        res.status(201).json({ message: 'Address added successfully', address: addresses });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
-
-router.post('/update-address', auth, async (req, res) => {
-    const userId = req.user.id
-    const { pincode, city, state, streetAddress, area, landmark } = req.body;
+router.post('/get-all-addresses', auth, async (req, res) => {
+    const userId = req.user.id;
 
     try {
-        let user = await users.findById(userId);
+        const user = await users.findById(userId).select('address');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Update fields only if they are provided in the request body
-        if (pincode) user.address.pincode = pincode;
-        if (city) user.address.city = city;
-        if (state) user.address.state = state;
-        if (streetAddress) user.address.streetAddress = streetAddress;
-        if (area) user.address.area = area;
-        if (landmark) user.address.landmark = landmark;
-
-        await user.save();
-        res.json({ message: 'Address updated successfully', address: user.address });
+        res.json({ addresses:user  });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
+router.post('/get-address/:addressId', auth, async (req, res) => {
+    const userId = req.user.id;
+    const { addressId } = req.params; 
+
+    try {
+       
+        const user = await users.findById(userId).select('addresses');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const address = users.address.find(addr => addr._id.toString() === addressId);
+
+        if (!address) {
+            return res.status(404).json({ message: 'Address not found' });
+        }
+
+        res.json({ address });
+    } catch (error) {
+        console.error('Error fetching address:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+router.post('/update-address', auth, async (req, res) => {
+    const userId = req.user.id;
+    
+    const {addressId, pincode, city, state, streetAddress, area, landmark, saveAddressAs } = req.body;
+
+    try {
+        const user = await users.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const addresses = address.findById(addressId)
+        if (!addresses) {
+            return res.status(404).json({ message: 'Address not found' });
+        }
+
+        addresses.pincode = pincode || addresses.pincode;
+        addresses.city = city || addresses.city;
+        addresses.state = state || addresses.state;
+        addresses.streetAddress = streetAddress || addresses.streetAddress;
+        addresses.area = area || addresses.area;
+        addresses.landmark = landmark || addresses.landmark;
+        addresses.saveAddressAs = saveAddressAs || addresses.saveAddressAs;
+
+        await addresses.save();
+
+        res.json({ message: 'Address updated successfully', addresses });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
 
 router.post('/delete-address', auth, async (req, res) => {
     const userId = req.user.id
+    const addressId = req.body
 
     try {
-        let user = await users.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        let addrs = await address.findByIdAndDelete(addressId)
+        if (!addrs) {
+            return res.status(404).json({ message: 'address not found' });
         }
 
-        // Clear the address sub-document
-        user.address = {
-            pincode: '',
-            city: '',
-            state: '',
-            streetAddress: '',
-            area: '',
-            landmark: ''
-        };
-
-        await user.save();
         res.json({ message: 'Address removed successfully' });
     } catch (error) {
         console.error(error);
@@ -589,5 +623,5 @@ router.post('/delete-address', auth, async (req, res) => {
     }
 });
 
-router.post('/delete')
+
 module.exports = router;  

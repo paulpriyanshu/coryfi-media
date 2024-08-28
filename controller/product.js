@@ -46,61 +46,61 @@ router.get('/getallbrands', async (req, res) => {
     }
 });
 
-router.get('/brands/:name', async (req, res) => {
-    try {
-        const brand = await Brand.findById(req.params.name);
-        if (!brand) {
-            return res.status(404).json({ success: false, message: 'Brand not found' });
-        }
-        res.status(200).json({ success: true, data: brand });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-});
+// router.get('/brands/:name', async (req, res) => {
+//     try {
+//         const brand = await Brand.findById(req.params.name);
+//         if (!brand) {
+//             return res.status(404).json({ success: false, message: 'Brand not found' });
+//         }
+//         res.status(200).json({ success: true, data: brand });
+//     } catch (error) {
+//         res.status(400).json({ success: false, message: error.message });
+//     }
+// });
 
-router.put('/updatebrands/:name', async (req, res) => {
-    try {
-        const { name, isActive } = req.body;
-        const brand = await Brand.findByIdAndUpdate(
-            req.params.name,
-            { name, isActive, updatedAt: Date.now() },
-            { new: true, runValidators: true }
-        );
-        if (!brand) {
-            return res.status(404).json({ success: false, message: 'Brand not found' });
-        }
-        res.status(200).json({ success: true, data: brand });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-});
+// router.put('/updatebrands/:name', async (req, res) => {
+//     try {
+//         const { name, isActive } = req.body;
+//         const brand = await Brand.findByIdAndUpdate(
+//             req.params.name,
+//             { name, isActive, updatedAt: Date.now() },
+//             { new: true, runValidators: true }
+//         );
+//         if (!brand) {
+//             return res.status(404).json({ success: false, message: 'Brand not found' });
+//         }
+//         res.status(200).json({ success: true, data: brand });
+//     } catch (error) {
+//         res.status(400).json({ success: false, message: error.message });
+//     }
+// });
 
-router.delete('/deletebrands/:name', async (req, res) => {
-    try {
-        const brand = await Brand.findByIdAndDelete(req.params.name);
-        if (!brand) {
-            return res.status(404).json({ success: false, message: 'Brand not found' });
-        }
-        res.status(200).json({ success: true, message: 'Brand deleted successfully' });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-});
+// router.delete('/deletebrands/:name', async (req, res) => {
+//     try {
+//         const brand = await Brand.findByIdAndDelete(req.params.name);
+//         if (!brand) {
+//             return res.status(404).json({ success: false, message: 'Brand not found' });
+//         }
+//         res.status(200).json({ success: true, message: 'Brand deleted successfully' });
+//     } catch (error) {
+//         res.status(400).json({ success: false, message: error.message });
+//     }
+// });
 
-router.post('/getwomencategory/:category',async(req,res)=>{
-    try {
-        const data = await Product.find().populate({
-            path:'category',
-            match:{name:req.params.category}
-        });
-        if (!data) {
-            return res.status(404).json({ success: false, message: 'data not found' });
-        }
-        res.status(200).json({ success: true, data: data });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-})
+// router.post('/getwomencategory/:category',async(req,res)=>{
+//     try {
+//         const data = await Product.find().populate({
+//             path:'category',
+//             match:{name:req.params.category}
+//         });
+//         if (!data) {
+//             return res.status(404).json({ success: false, message: 'data not found' });
+//         }
+//         res.status(200).json({ success: true, data: data });
+//     } catch (error) {
+//         res.status(400).json({ success: false, message: error.message });
+//     }
+// })
 
 router.post('/createcategory',async(req,res)=>{
     try{
@@ -114,73 +114,73 @@ router.post('/createcategory',async(req,res)=>{
     }
 })
 
-router.post('/createcategory/:catid/createsubcategory', async (req, res) => {
-    try {
-        const { catid } = req.params;
+// router.post('/createcategory/:catid/createsubcategory', async (req, res) => {
+//     try {
+//         const { catid } = req.params;
 
-        // Validate the catid
-        if (!mongoose.Types.ObjectId.isValid(catid)) {
-            return res.status(400).json({ success: false, message: 'Invalid category ID' });
-        }
+//         // Validate the catid
+//         if (!mongoose.Types.ObjectId.isValid(catid)) {
+//             return res.status(400).json({ success: false, message: 'Invalid category ID' });
+//         }
 
-        const category = await Category.findById(catid);
-        if (!category) {
-            return res.status(404).json({ success: false, message: 'Category not found' });
-        }
+//         const category = await Category.findById(catid);
+//         if (!category) {
+//             return res.status(404).json({ success: false, message: 'Category not found' });
+//         }
         
-        const subCategory = new SubCategory({
-            name: req.body.name,
-        });
+//         const subCategory = new SubCategory({
+//             name: req.body.name,
+//         });
 
-        await subCategory.save();
+//         await subCategory.save();
 
-        // Push the subCategory ID to the category's subCategories array
-        category.subCategories.push(subCategory._id);
-        await category.save();
+//         // Push the subCategory ID to the category's subCategories array
+//         category.subCategories.push(subCategory._id);
+//         await category.save();
 
-        res.status(201).json({
-            success: true,
-            subCategory
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
+//         res.status(201).json({
+//             success: true,
+//             subCategory
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ success: false, message: 'Server error' });
+//     }
+// });
 
-router.post('/createsubcategory/:subcatid/createsubsubcategory', async (req, res) => {
-    try {
-        const { subcatid } = req.params;
+// router.post('/createsubcategory/:subcatid/createsubsubcategory', async (req, res) => {
+//     try {
+//         const { subcatid } = req.params;
 
-        // Validate the catid
-        if (!mongoose.Types.ObjectId.isValid(subcatid)) {
-            return res.status(400).json({ success: false, message: 'Invalid category ID' });
-        }
+//         // Validate the catid
+//         if (!mongoose.Types.ObjectId.isValid(subcatid)) {
+//             return res.status(400).json({ success: false, message: 'Invalid category ID' });
+//         }
 
-        const category = await SubCategory.findById(subcatid);
-        if (!category) {
-            return res.status(404).json({ success: false, message: 'SubCategory not found' });
-        }
+//         const category = await SubCategory.findById(subcatid);
+//         if (!category) {
+//             return res.status(404).json({ success: false, message: 'SubCategory not found' });
+//         }
         
-        const subsubCategory = new SubSubCategory({
-            name: req.body.name,
-        });
+//         const subsubCategory = new SubSubCategory({
+//             name: req.body.name,
+//         });
 
-        await subsubCategory.save();
+//         await subsubCategory.save();
 
-        // Push the subCategory ID to the category's subCategories array
-        SubCategory.push(subsubCategory._id);
-        await SubCategory.save();
+//         // Push the subCategory ID to the category's subCategories array
+//         SubCategory.push(subsubCategory._id);
+//         await SubCategory.save();
 
-        res.status(201).json({
-            success: true,
-            subsubCategory
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
+//         res.status(201).json({
+//             success: true,
+//             subsubCategory
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ success: false, message: 'Server error' });
+//     }
+// });
 //craete product variant
 router.post('/craete-product-variant',async(req,res)=>{
     try{
@@ -240,7 +240,7 @@ router.post('/getproducts-by-variant', async (req, res) => {
 });
 
 // Create product
-router.post('/createproduct', async (req, res) => {
+router.post('/createproduct', auth,async (req, res) => {
     try {
         const { name, price, description, images, category, subCategory, subSubCategory, brand, seller, stock, userId } = req.body;
 
@@ -386,59 +386,59 @@ router.post('/products/filter', async (req, res) => {
     }
 });
 
-// search product 
-router.post('/products/search', async (req, res) => {
-    try {
-        const { query } = req.query;
-        let brandId, categoryId, subCategoryId, subSubCategoryId;
+// // search product 
+// router.post('/products/search', async (req, res) => {
+//     try {
+//         const { query } = req.query;
+//         let brandId, categoryId, subCategoryId, subSubCategoryId;
 
-        if (query) {
-            const brand = await Brand.findOne({ name: { $regex: query, $options: 'i' } });
-            if (brand) {
-                brandId = brand._id;
-            }
+//         if (query) {
+//             const brand = await Brand.findOne({ name: { $regex: query, $options: 'i' } });
+//             if (brand) {
+//                 brandId = brand._id;
+//             }
 
-            // Search for the category by name and get its ObjectId
-            const category = await Category.findOne({ name: { $regex: query, $options: 'i' } });
-            if (category) {
-                categoryId = category._id;
-            }
+//             // Search for the category by name and get its ObjectId
+//             const category = await Category.findOne({ name: { $regex: query, $options: 'i' } });
+//             if (category) {
+//                 categoryId = category._id;
+//             }
 
-            // Search for the subcategory by name and get its ObjectId
-            const subCategory = await SubCategory.findOne({ name: { $regex: query, $options: 'i' } });
-            if (subCategory) {
-                subCategoryId = subCategory._id;
-            }
+//             // Search for the subcategory by name and get its ObjectId
+//             const subCategory = await SubCategory.findOne({ name: { $regex: query, $options: 'i' } });
+//             if (subCategory) {
+//                 subCategoryId = subCategory._id;
+//             }
 
-            // Search for the subsubcategory by name and get its ObjectId
-            const subSubCategory = await SubSubCategory.findOne({ name: { $regex: query, $options: 'i' } });
-            if (subSubCategory) {
-                subSubCategoryId = subSubCategory._id;
-            }
-        }
+//             // Search for the subsubcategory by name and get its ObjectId
+//             const subSubCategory = await SubSubCategory.findOne({ name: { $regex: query, $options: 'i' } });
+//             if (subSubCategory) {
+//                 subSubCategoryId = subSubCategory._id;
+//             }
+//         }
 
-        // Search products based on name, description, brand, category, subcategory, or subsubcategory
-        const products = await Product.find({
-            $or: [
-                { name: { $regex: query, $options: 'i' } },
-                { description: { $regex: query, $options: 'i' } },
-                ...(brandId ? [{ brand: brandId }] : []),
-                ...(categoryId ? [{ category: categoryId }] : []),
-                ...(subCategoryId ? [{ subCategory: subCategoryId }] : []),
-                ...(subSubCategoryId ? [{ subSubCategory: subSubCategoryId }] : [])
-            ]
-        }).populate('category subCategory subSubCategory brand variants');
+//         // Search products based on name, description, brand, category, subcategory, or subsubcategory
+//         const products = await Product.find({
+//             $or: [
+//                 { name: { $regex: query, $options: 'i' } },
+//                 { description: { $regex: query, $options: 'i' } },
+//                 ...(brandId ? [{ brand: brandId }] : []),
+//                 ...(categoryId ? [{ category: categoryId }] : []),
+//                 ...(subCategoryId ? [{ subCategory: subCategoryId }] : []),
+//                 ...(subSubCategoryId ? [{ subSubCategory: subSubCategoryId }] : [])
+//             ]
+//         }).populate('category subCategory subSubCategory brand variants');
 
-        return res.status(200).json(products);
-    } catch (error) {
-        console.error('Error searching products:', error);
-        return res.status(500).json({ message: 'Server error' });
-    }
-});
+//         return res.status(200).json(products);
+//     } catch (error) {
+//         console.error('Error searching products:', error);
+//         return res.status(500).json({ message: 'Server error' });
+//     }
+// });
 
 
 //get single product
-router.post('/products/:id', async (req, res) => {
+router.get('/products/:id', async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
         if (!product) {

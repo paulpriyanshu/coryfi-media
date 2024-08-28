@@ -2,7 +2,7 @@ const express = require('express')
 const authRoutes = require('./controller/users');
 const product = require('./controller/product')
 const cart = require('./controller/cart')
-// const search = require('./controller/search')
+const search = require('./controller/search')
 const limiter = require('./middleware/ratelimit')
 const connectdb = require('./config/dbconnection');
 const passport = require('passport');
@@ -26,7 +26,7 @@ app.use(limiter);
 app.use('/api/', authRoutes);
 app.use('/api/', product);
 app.use('/api/',cart)
-// app.use('./api',search)
+app.use('/api',search)
 
 app.get('/getdata',(req,res)=>{
     res.json({msg:"hello"})
