@@ -11,7 +11,6 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const dotenv = require('dotenv');
-const connectToRedis = require('../config/redisconnection');
 const auth = require('../middleware/auth')
 const { Client } = require('@elastic/elasticsearch');
 const router = express.Router()
