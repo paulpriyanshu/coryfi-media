@@ -12,7 +12,7 @@ const cors=require('cors')
 // const swaggerSpec = require('./config/swaggerconf');
 const app = express()
 
-const port = 8080
+const port = 80800
 
 connectdb()
 app.use(cors())
