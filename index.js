@@ -4,7 +4,7 @@ const product = require('./controller/product')
 const cart = require('./controller/cart')
 const search = require('./controller/search')
 const limiter = require('./middleware/ratelimit')
-const connectdb = require('./config/dbconnection');
+const connectdb = require('./libs/dbconnection');
 const passport = require('passport');
 const cors=require('cors')
 // const swaggerUi = require('swagger-ui-express');
@@ -16,7 +16,7 @@ const port = 8080
 
 connectdb()
 app.use(cors())
-require('./config/passport');
+require('./libs/passport');
 app.use(passport.initialize());
 
 app.use(express.json());
