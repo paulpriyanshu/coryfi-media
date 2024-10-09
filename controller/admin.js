@@ -26,7 +26,7 @@ router.post('/getallbrands',async(req,res)=>{
         res.status(400).json({message:error})
     }
 })
-
+   
 
 router.post('/getactivebrands',async(req,res)=>{
     try{
