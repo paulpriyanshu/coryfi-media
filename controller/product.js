@@ -81,7 +81,22 @@ router.post('/brands/name/:name', async (req, res) => {
     }
   });
   
-  
+  router.get('/getactivebrands', async (req, res) => {
+    try {
+        const activeBrands = await Brand.find({ isActive: true });
+        res.status(200).json({ success: true, data: activeBrands });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+});
+router.get('/getinactivebrands', async (req, res) => {
+    try {
+        const activeBrands = await Brand.find({ isActive: false });
+        res.status(200).json({ success: true, data: activeBrands });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+});
 router.get('/getallbrands', async (req, res) => {
     try {
         const brands = await Brand.find();
@@ -181,7 +196,7 @@ router.post('/createcategory', async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
-router.delete('/deletecategory/:name', async (req, res) => {
+router.post('/deletecategory/:name', async (req, res) => {
     try {
         const { name } = req.params;
 
@@ -407,95 +422,66 @@ router.post('/getproducts-by-variant', async (req, res) => {
 // Create product
 router.post('/createproduct', async (req, res) => {
     try {
-        const { name, price, description, images, category, subCategory, subSubCategory, brand, seller, stock } = req.body;
+        const { name, price, description, images, category, subCategory, subSubCategory, brand, seller, stock, reviews } = req.body;
 
         // Validate required fields
-        if (!name || !price || !description || !category || !subCategory || !subSubCategory || !brand || !seller || stock === undefined) {
-            return res.status(400).json({ message: 'All fields are mandatory' });
+        if (!name || !price || !description || !category || !subCategory || !brand || !seller || stock === undefined) {
+            return res.status(400).json({ message: 'All required fields must be provided' });
         }
 
-        // Initialize variables for IDs
-        let brandid, categoryid, subcategoryid, subsubcategoryid;
-
-        // Check if brand exists; if not, create it
-        const brandExist = await Brand.findOne({ name: brand });
-        if (!brandExist) {
-            const createBrand = new Brand({ name: brand });
-            await createBrand.save();
-            brandid = createBrand._id;
-        } else {
-            brandid = brandExist._id;
+        // Find or create Brand
+        let brandDoc = await Brand.findOne({ name: brand });
+        if (!brandDoc) {
+            brandDoc = await Brand.create({ name: brand });
         }
 
-        // Check if subSubCategory exists; if not, create it
-        const subSubCategoryExist = await SubSubCategory.findOne({ name: subSubCategory });
-        if (!subSubCategoryExist) {
-            const createSubSubCategory = new SubSubCategory({ name: subSubCategory });
-            await createSubSubCategory.save();
-            subsubcategoryid = createSubSubCategory._id;
-        } else {
-            subsubcategoryid = subSubCategoryExist._id;
+        // Find or create Category
+        let categoryDoc = await Category.findOne({ name: category });
+        if (!categoryDoc) {
+            categoryDoc = await Category.create({ name: category });
         }
 
-        // Check if subCategory exists; if not, create it
-        const subCategoryExist = await SubCategory.findOne({ name: subCategory });
-        if (!subCategoryExist) {
-            const createSubCategory = new SubCategory({ name: subCategory, subSubCategories: [subsubcategoryid] });
-            await createSubCategory.save();
-            subcategoryid = createSubCategory._id;
-        } else {
-            subcategoryid = subCategoryExist._id;
-            // Add subSubCategory if it does not already exist in the subCategory
-            if (!subCategoryExist.subSubCategories.includes(subsubcategoryid)) {
-                subCategoryExist.subSubCategories.push(subsubcategoryid);
-                await subCategoryExist.save();
+        // Find or create SubCategory
+        let subCategoryDoc = await SubCategory.findOne({ name: subCategory });
+        if (!subCategoryDoc) {
+            subCategoryDoc = await SubCategory.create({ name: subCategory });
+            categoryDoc.subCategories.push(subCategoryDoc._id);
+            await categoryDoc.save();
+        }
+
+        // Find or create SubSubCategory (if provided)
+        let subSubCategoryDoc;
+        if (subSubCategory) {
+            subSubCategoryDoc = await SubSubCategory.findOne({ name: subSubCategory });
+            if (!subSubCategoryDoc) {
+                subSubCategoryDoc = await SubSubCategory.create({ name: subSubCategory });
+                subCategoryDoc.subSubCategories.push(subSubCategoryDoc._id);
+                await subCategoryDoc.save();
             }
         }
 
-        // Check if category exists; if not, create it
-        const categoryExist = await Category.findOne({ name: category });
-        if (!categoryExist) {
-            const createCategory = new Category({ name: category, subCategories: [subcategoryid] });
-            await createCategory.save();
-            categoryid = createCategory._id;
-        } else {
-            categoryid = categoryExist._id;
-            // Add subCategory if it does not already exist in the category
-            if (!categoryExist.subCategories.includes(subcategoryid)) {
-                categoryExist.subCategories.push(subcategoryid);
-                await categoryExist.save();
-            }
+        // Prepare reviews (if provided)
+        let processedReviews = [];
+        if (reviews && Array.isArray(reviews)) {
+            processedReviews = reviews.map(review => ({
+                ...review,
+                user: review.user ? new mongoose.Types.ObjectId(review.user) : undefined
+            }));
         }
 
-        // Check if product already exists
-        const existingProduct = await Product.findOne({
-            name,
-            category: categoryid,
-            subCategory: subcategoryid,
-            subSubCategory: subsubcategoryid,
-            brand: brandid,
-            seller
-        });
-        
-        if (existingProduct) {
-            return res.status(400).json({ message: 'Product already exists' });
-        }
-
-        // Create and save the new product
+        // Create the product
         const newProduct = new Product({
             name,
             price,
             description,
             images,
-            brand: brandid,
-            category: categoryid,
-            subCategory: subcategoryid,
-            subSubCategory: subsubcategoryid,
+            category: categoryDoc._id,
+            subCategory: subCategoryDoc._id,
+            subSubCategory: subSubCategoryDoc ? subSubCategoryDoc._id : undefined,
+            brand: brandDoc._id,
             seller,
             stock,
-            // Note: Removed the user field as per your request
-            // Optionally, add reviews if provided
-            reviews: req.body.reviews || [] // Optional field, default to an empty array if not provided
+            reviews: processedReviews
         });
 
         const savedProduct = await newProduct.save();
@@ -503,10 +489,10 @@ router.post('/createproduct', async (req, res) => {
         return res.status(201).json({ message: 'Product created successfully', product: savedProduct });
     } catch (error) {
         console.error('Error creating product:', error);
-        return res.status(500).json({ message: 'Server error' });
+        return res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
-
+ 
 //get allproduct
 router.get('/getproducts',async(req,res)=>{
     try{

@@ -21,18 +21,8 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-    images: [
-        {
-            public_id: {
-                type: String,
-                required: false,
-            },
-            url: {
-                type: String,
-                required: false,
-            },
-        },
-    ],
+    images: [{ type: String }],
+    
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     subCategory: { type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory', required: true },
     subSubCategory: { type: mongoose.Schema.Types.ObjectId, ref: 'SubSubCategory' },
