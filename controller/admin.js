@@ -71,7 +71,7 @@ router.post('/getactivecategory',async(req,res)=>{
 router.post('/getinactivecategories',async(req,res)=>{
    try{
        const data = await Category.find({isActive:false}).populate('subCategories')
-       res.status(200).send(data)
+       res.status(200).send(data)``
    }catch(error){
     res.status(400).json({message:error})
    }
