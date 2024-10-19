@@ -425,8 +425,8 @@ router.post('/createproduct', async (req, res) => {
         const { name, price, description, images, category, subCategory, subSubCategory, brand, seller, stock, reviews } = req.body;
 
         // Validate required fields
-        if (!name || !price || !description || !category || !subCategory || !brand || !seller || stock === undefined) {
-            return res.status(400).json({ message: 'All required fields must be provided' });
+        if (!name || !price || !description || !brand) {
+            return res.status(400).json({ message: 'Name, price, description, and brand are required' });
         }
 
         // Find or create Brand
@@ -435,18 +435,28 @@ router.post('/createproduct', async (req, res) => {
             brandDoc = await Brand.create({ name: brand });
         }
 
-        // Find or create Category
-        let categoryDoc = await Category.findOne({ name: category });
-        if (!categoryDoc) {
-            categoryDoc = await Category.create({ name: category });
+        // Find or create Category (if provided)
+        let categoryDoc;
+        if (category) {
+            categoryDoc = await Category.findOne({ name: category });
+            if (!categoryDoc) {
+                categoryDoc = await Category.create({ name: category });
+            }
         }
 
-        // Find or create SubCategory
-        let subCategoryDoc = await SubCategory.findOne({ name: subCategory });
-        if (!subCategoryDoc) {
-            subCategoryDoc = await SubCategory.create({ name: subCategory });
-            categoryDoc.subCategories.push(subCategoryDoc._id);
-            await categoryDoc.save();
+        // Find or create SubCategory (if provided)
+        let subCategoryDoc;
+        if (subCategory) {
+            subCategoryDoc = await SubCategory.findOne({ name: subCategory });
+            if (!subCategoryDoc) {
+                subCategoryDoc = await SubCategory.create({ name: subCategory });
+                
+                // If category is provided, link the new subCategory
+                if (categoryDoc) {
+                    categoryDoc.subCategories.push(subCategoryDoc._id);
+                    await categoryDoc.save();
+                }
+            }
         }
 
         // Find or create SubSubCategory (if provided)
@@ -455,8 +465,12 @@ router.post('/createproduct', async (req, res) => {
             subSubCategoryDoc = await SubSubCategory.findOne({ name: subSubCategory });
             if (!subSubCategoryDoc) {
                 subSubCategoryDoc = await SubSubCategory.create({ name: subSubCategory });
-                subCategoryDoc.subSubCategories.push(subSubCategoryDoc._id);
-                await subCategoryDoc.save();
+                
+                // If subCategory is provided, link the new subSubCategory
+                if (subCategoryDoc) {
+                    subCategoryDoc.subSubCategories.push(subSubCategoryDoc._id);
+                    await subCategoryDoc.save();
+                }
             }
         }
 
@@ -474,13 +488,13 @@ router.post('/createproduct', async (req, res) => {
             name,
             price,
             description,
-            images,
-            category: categoryDoc._id,
-            subCategory: subCategoryDoc._id,
+            images: images || [], // Default to an empty array if images are not provided
+            category: categoryDoc ? categoryDoc._id : undefined,
+            subCategory: subCategoryDoc ? subCategoryDoc._id : undefined,
             subSubCategory: subSubCategoryDoc ? subSubCategoryDoc._id : undefined,
             brand: brandDoc._id,
-            seller,
-            stock,
+            seller: seller || '', // Default to an empty string if the seller is not provided
+            stock: stock !== undefined ? stock : 0, // Default stock to 0 if not provided
             reviews: processedReviews
         });
 
@@ -492,7 +506,6 @@ router.post('/createproduct', async (req, res) => {
         return res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
- 
 //get allproduct
 router.get('/getproducts',async(req,res)=>{
     try{

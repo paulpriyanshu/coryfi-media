@@ -22,15 +22,15 @@ const productSchema = new mongoose.Schema({
         default: 0,
     },
     images: [{ type: String }],
-    
+
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
-    subCategory: { type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory', required: true },
+    subCategory: { type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory', required: false },
     subSubCategory: { type: mongoose.Schema.Types.ObjectId, ref: 'SubSubCategory' },
     brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand', required: true },
     variants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ProductVariant' }],
     seller: {
         type: String,
-        required: [true, "Please enter product seller"],
+        required: [false, "Please enter product seller"],
     },
     stock: {
         type: Number,
