@@ -98,7 +98,7 @@ router.get('/getinactivebrands', async (req, res) => {
     }
 });
 router.get('/getallbrands', async (req, res) => {
-    try {
+try {
         const brands = await Brand.find();
         res.status(200).json({ success: true, data: brands });
     } catch (error) {
@@ -611,81 +611,90 @@ router.get('/products/:id', async (req, res) => {
 });
 
 
-//update product 
 router.post('/updateproduct/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, price, description, images, category, subCategory, subSubCategory, brand, seller, stock } = req.body;
+        const {
+            name,
+            price,
+            description,
+            images,
+            category,
+            subCategory,
+            subSubCategory,
+            brand,
+            seller,
+            stock,
+        } = req.body;
 
-        if (!name || !price || !description || !category || !subCategory || !brand || !subSubCategory || !seller || !stock) {
-            return res.status(400).json({ message: 'All fields are mandatory' });
-        }
+        // Build the update object dynamically
+        const updateData = {};
 
-        let brandid;
-        let categoryid;
-        let subcategoryid;
-        let subsubcategoryid;
+        if (name) updateData.name = name;
+        if (price) updateData.price = price;
+        if (description) updateData.description = description;
+        if (images) updateData.images = images;
+        if (seller) updateData.seller = seller;
+        if (stock) updateData.stock = stock;
 
-        const brandexist = await Brand.findOne({ name: brand });
-        if (!brandexist) {
-            const createbrand = new Brand({ name: brand });
-            await createbrand.save();
-            brandid = createbrand._id;
-        } else {
-            brandid = brandexist._id;
-        }
-
-        const subsubcategoryexist = await SubSubCategory.findOne({ name: subSubCategory });
-        if (!subsubcategoryexist) {
-            const createsubsubcategory = new SubSubCategory({ name: subSubCategory });
-            await createsubsubcategory.save();
-            subsubcategoryid = createsubsubcategory._id;
-        } else {
-            subsubcategoryid = subsubcategoryexist._id;
-        }
-
-        const subcategoryexist = await SubCategory.findOne({ name: subCategory });
-        if (!subcategoryexist) {
-            const createsubcategory = new SubCategory({ name: subCategory, subSubCategories: [subsubcategoryid] });
-            await createsubcategory.save();
-            subcategoryid = createsubcategory._id;
-        } else {
-            subcategoryid = subcategoryexist._id;
-            if (!subcategoryexist.subSubCategories.includes(subsubcategoryid)) {
-                subcategoryexist.subSubCategories.push(subsubcategoryid);
-                await subcategoryexist.save();
+        // Handle the brand update or creation only if brand is provided
+        if (brand) {
+            const brandRecord = await Brand.findOne({ name: brand });
+            if (!brandRecord) {
+                const newBrand = new Brand({ name: brand });
+                await newBrand.save();
+                updateData.brand = newBrand._id;
+            } else {
+                updateData.brand = brandRecord._id;
             }
         }
 
-        const categoryexist = await Category.findOne({ name: category });
-        if (!categoryexist) {
-            const createcategory = new Category({ name: category, subCategories: [subcategoryid] });
-            await createcategory.save();
-            categoryid = createcategory._id;
-        } else {
-            categoryid = categoryexist._id;
-            if (!categoryexist.subCategories.includes(subcategoryid)) {
-                categoryexist.subCategories.push(subcategoryid);
-                await categoryexist.save();
+        // Handle the subSubCategory update or creation only if subSubCategory is provided
+        if (subSubCategory) {
+            const subSubCategoryRecord = await SubSubCategory.findOne({ name: subSubCategory });
+            if (!subSubCategoryRecord) {
+                const newSubSubCategory = new SubSubCategory({ name: subSubCategory });
+                await newSubSubCategory.save();
+                updateData.subSubCategory = newSubSubCategory._id;
+            } else {
+                updateData.subSubCategory = subSubCategoryRecord._id;
             }
         }
 
-        const updatedProduct = await Product.findByIdAndUpdate(
-            id,
-            {
-                name,
-                price,
-                description,
-                images,
-                brand: brandid,
-                category: categoryid,
-                subCategory: subcategoryid,
-                subSubCategory: subsubcategoryid,
-                seller,
-                stock,
-            },
-            { new: true, runValidators: true }
-        );
+        // Handle the subCategory update or creation only if subCategory is provided
+        if (subCategory) {
+            const subCategoryRecord = await SubCategory.findOne({ name: subCategory });
+            if (!subCategoryRecord) {
+                const newSubCategory = new SubCategory({ name: subCategory, subSubCategories: [updateData.subSubCategory] });
+                await newSubCategory.save();
+                updateData.subCategory = newSubCategory._id;
+            } else {
+                updateData.subCategory = subCategoryRecord._id;
+                if (updateData.subSubCategory && !subCategoryRecord.subSubCategories.includes(updateData.subSubCategory)) {
+                    subCategoryRecord.subSubCategories.push(updateData.subSubCategory);
+                    await subCategoryRecord.save();
+                }
+            }
+        }
+
+        // Handle the category update or creation only if category is provided
+        if (category) {
+            const categoryRecord = await Category.findOne({ name: category });
+            if (!categoryRecord) {
+                const newCategory = new Category({ name: category, subCategories: [updateData.subCategory] });
+                await newCategory.save();
+                updateData.category = newCategory._id;
+            } else {
+                updateData.category = categoryRecord._id;
+                if (updateData.subCategory && !categoryRecord.subCategories.includes(updateData.subCategory)) {
+                    categoryRecord.subCategories.push(updateData.subCategory);
+                    await categoryRecord.save();
+                }
+            }
+        }
+
+        // Update the product using the dynamically built updateData object
+        const updatedProduct = await Product.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
 
         if (!updatedProduct) {
             return res.status(404).json({ message: 'Product not found' });
@@ -697,8 +706,6 @@ router.post('/updateproduct/:id', async (req, res) => {
         return res.status(500).json({ message: 'Server error' });
     }
 });
-
-
 //delete product
 router.post('/deleteproduct/:id', async (req, res) => {
     try {
