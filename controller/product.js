@@ -335,7 +335,7 @@ router.post('/createproduct', async (req, res) => {
 });
 
 //get allproduct
-router.post('/getproducts',async(req,res)=>{
+router.get('/getproducts',async(req,res)=>{
     try{
       const data = await Product.find().populate({path:'category',populate:{path:'subCategories',populate:{path:'subSubCategories'}}}).populate('brand')
    res.send(data)
@@ -440,7 +440,7 @@ router.post('/products/search', async (req, res) => {
 //get single product
 router.post('/products/:id', async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
+        const product = await Product.findById(req.params.id).populate('variants');
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
         }
