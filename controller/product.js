@@ -392,7 +392,7 @@ router.post('/products/search', async (req, res) => {
         const { query } = req.query;
         let brandId, categoryId, subCategoryId, subSubCategoryId;
 
-        if (query) {
+        if (query) { 
             const brand = await Brand.findOne({ name: { $regex: query, $options: 'i' } });
             if (brand) {
                 brandId = brand._id;
