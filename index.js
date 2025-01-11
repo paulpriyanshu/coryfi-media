@@ -41,7 +41,7 @@ app.use('/api/',image)
 console.log("arrived here2")
 
 //console.log(process.env.EMAIL_USERNAME)
-app.get('/getdata',(req,res)=>{
+app.get('/getdata',(req,res)=>{ 
     res.json({msg:"hello"})
 })
 
