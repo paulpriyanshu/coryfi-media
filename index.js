@@ -21,9 +21,8 @@ const port = 8000
 connectdb()
 app.use(cors())
 
-connectdb()
-require('./libs/passport');
-// app.use(passport.initialize());
+// connectdb()
+// app.use(passport.initialize());~~
 
 
 app.use(express.json());
