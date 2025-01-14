@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Create the S3 client instance
 const s3Client = new S3Client({
-    region: "eu-north-1",
+    region: "ap-south-1",
     credentials: {
         accessKeyId: process.env.ACCESS_KEY_ID,
         secretAccessKey: process.env.SECRET_ACCESS_KEY
@@ -22,18 +22,33 @@ const generateUniqueFilename = (originalName) => {
 
 // Define a function to get a direct URL for an image
 const getImageUrl = (key) => {  
-    return `https://gezeno.s3.eu-north-1.amazonaws.com/${key}`;
+    return `https://coryfi-images.s3.ap-south-1.amazonaws.com/${key}`;
 };  
 
 // Define a function to get a signed URL for uploading an image
 const imageUpload = async (filename) => {
-    // const uniqueFilename = generateUniqueFilename(filename);
+    // Extract the file extension
+    const fileExtension = filename.split('.').pop().toLowerCase();
+
+    // Determine the ContentType based on the file extension
+    const contentTypeMap = {
+        jpeg: "image/jpeg",
+        jpg: "image/jpeg",
+        png: "image/png",
+        heic: "image/heic", // Support for HEIC files
+        webp: "image/webp",
+    };
+
+    const contentType = contentTypeMap[fileExtension] || "application/octet-stream"; // Default type if unknown
+
     const command = new PutObjectCommand({
-        Bucket: "gezeno",
+        Bucket: "coryfi-images",
         Key: `images/${filename}`,
-        ContentType: "image/jpeg"
+        ContentType: contentType,
     });
+
     const url = await getSignedUrl(s3Client, command, { expiresIn: 900 }); // Set expiration time to 900 seconds (15 minutes)
+
     return { url, filename };
 };
 
